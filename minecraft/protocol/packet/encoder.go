@@ -5,8 +5,9 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"fmt"
-	"github.com/sandertv/gophertunnel/minecraft/internal"
 	"io"
+
+	"github.com/sandertv/gophertunnel/minecraft/internal"
 )
 
 // Encoder handles the encoding of Minecraft packets that are sent to an io.Writer. The packets are compressed
@@ -14,6 +15,7 @@ import (
 type Encoder struct {
 	w io.Writer
 
+	legacy      bool
 	compression Compression
 	encrypt     *encrypt
 }
@@ -36,6 +38,12 @@ func (encoder *Encoder) EnableEncryption(keyBytes [32]byte) {
 // EnableCompression enables compression for the Encoder.
 func (encoder *Encoder) EnableCompression(compression Compression) {
 	encoder.compression = compression
+}
+
+// EnableLegacyCompression enables legacy compression for the Encoder.
+func (encoder *Encoder) EnableLegacyCompression(compression Compression) {
+	encoder.compression = compression
+	encoder.legacy = true
 }
 
 // Encode encodes the packets passed. It writes all of them as a single packet which is  compressed and
@@ -62,7 +70,9 @@ func (encoder *Encoder) Encode(packets [][]byte) error {
 	data := buf.Bytes()
 	prepend := []byte{header}
 	if encoder.compression != nil {
-		prepend = append(prepend, byte(encoder.compression.EncodeCompression()))
+		if !encoder.legacy {
+			prepend = append(prepend, byte(encoder.compression.EncodeCompression()))
+		}
 		var err error
 		data, err = encoder.compression.Compress(data)
 		if err != nil {

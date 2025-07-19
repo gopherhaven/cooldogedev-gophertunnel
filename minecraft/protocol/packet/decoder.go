@@ -5,8 +5,9 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"fmt"
-	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"io"
+
+	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
 // Decoder handles the decoding of Minecraft packets sent through an io.Reader. These packets in turn contain
@@ -23,7 +24,9 @@ type Decoder struct {
 
 	decompress         bool
 	maxDecompressedLen int
-	encrypt            *encrypt
+
+	compression Compression
+	encrypt     *encrypt
 
 	checkPacketLimit bool
 }
@@ -59,6 +62,12 @@ func (decoder *Decoder) EnableEncryption(keyBytes [32]byte) {
 // EnableCompression enables compression for the Decoder.
 func (decoder *Decoder) EnableCompression(maxDecompressedLen int) {
 	decoder.decompress = true
+	decoder.maxDecompressedLen = maxDecompressedLen
+}
+
+// EnableLegacyCompression enables legacy compression for the Decoder.
+func (decoder *Decoder) EnableLegacyCompression(compression Compression, maxDecompressedLen int) {
+	decoder.compression = compression
 	decoder.maxDecompressedLen = maxDecompressedLen
 }
 
@@ -118,6 +127,11 @@ func (decoder *Decoder) Decode() (packets [][]byte, err error) {
 			if err != nil {
 				return nil, fmt.Errorf("decompress batch: %w", err)
 			}
+		}
+	} else if decoder.compression != nil {
+		data, err = decoder.compression.Decompress(data, decoder.maxDecompressedLen)
+		if err != nil {
+			return nil, fmt.Errorf("decompress batch: %w", err)
 		}
 	}
 

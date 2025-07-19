@@ -722,8 +722,13 @@ func (conn *Conn) handleRequestNetworkSettings(pk *packet.RequestNetworkSettings
 		return fmt.Errorf("send NetworkSettings: %w", err)
 	}
 	_ = conn.Flush()
-	conn.enc.EnableCompression(conn.compression)
-	conn.dec.EnableCompression(conn.maxDecompressedLen)
+	if conn.proto.ID() > 630 {
+		conn.enc.EnableCompression(conn.compression)
+		conn.dec.EnableCompression(conn.maxDecompressedLen)
+	} else {
+		conn.enc.EnableLegacyCompression(conn.compression)
+		conn.dec.EnableLegacyCompression(conn.compression, conn.maxDecompressedLen)
+	}
 	return nil
 }
 
