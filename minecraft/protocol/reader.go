@@ -278,7 +278,7 @@ func (r *Reader) PlayerInventoryAction(x *UseItemTransactionData) {
 	Slice(r, &x.Actions)
 	r.Varuint32(&x.ActionType)
 	r.Varuint32(&x.TriggerType)
-	r.BlockPos(&x.BlockPosition)
+	r.UBlockPos(&x.BlockPosition)
 	r.Varint32(&x.BlockFace)
 	r.Varint32(&x.HotBarSlot)
 	r.ItemInstance(&x.HeldItem)
@@ -587,6 +587,7 @@ func (r *Reader) AbilityValue(x *any) {
 	}
 }
 
+// Bitset reads a Bitset from the reader.
 func (r *Reader) Bitset(x *Bitset, size int) {
 	*x = NewBitset(size)
 	for i := 0; i < size; i += 7 {
@@ -607,6 +608,7 @@ func (r *Reader) Bitset(x *Bitset, size int) {
 	r.panic(errBitsetOverflow)
 }
 
+// PackSetting reads a PackSetting from the reader.
 func (r *Reader) PackSetting(x *PackSetting) {
 	r.String(&x.Name)
 	var t uint32
