@@ -3,15 +3,16 @@ package protocol
 import (
 	"bytes"
 	"fmt"
-	"github.com/go-gl/mathgl/mgl32"
-	"github.com/google/uuid"
-	"github.com/sandertv/gophertunnel/minecraft/nbt"
 	"image/color"
 	"io"
 	"math/big"
 	"reflect"
 	"sort"
 	"unsafe"
+
+	"github.com/go-gl/mathgl/mgl32"
+	"github.com/google/uuid"
+	"github.com/sandertv/gophertunnel/minecraft/nbt"
 )
 
 // Writer implements writing methods for data types from Minecraft packets. Each Packet implementation has one
@@ -514,6 +515,39 @@ func (w *Writer) PackSetting(x *PackSetting) {
 		w.String(&val)
 	default:
 		w.UnknownEnumOption(x.Value, "pack setting")
+	}
+}
+
+// ShapeData writes a ShapeData to the writer.
+func (w *Writer) ShapeData(x *ShapeData) {
+	var shapeDataType uint32
+	if !lookupShapeDataType(*x, &shapeDataType) {
+		w.UnknownEnumOption(fmt.Sprintf("%T", *x), "debug shape data type")
+	}
+	w.Varuint32(&shapeDataType)
+	(*x).Marshal(w)
+}
+
+// TextCategory writes a text category to the writer.
+func (w *Writer) TextCategory(x *uint8) {
+	category := *x
+	w.Uint8(&category)
+	switch category {
+	case TextCategoryMessageOnly:
+		w.String(&textCategories[TextCategoryMessageOnly][0])
+		w.String(&textCategories[TextCategoryMessageOnly][1])
+		w.String(&textCategories[TextCategoryMessageOnly][2])
+		w.String(&textCategories[TextCategoryMessageOnly][3])
+		w.String(&textCategories[TextCategoryMessageOnly][4])
+		w.String(&textCategories[TextCategoryMessageOnly][5])
+	case TextCategoryAuthoredMessage:
+		w.String(&textCategories[TextCategoryAuthoredMessage][0])
+		w.String(&textCategories[TextCategoryAuthoredMessage][1])
+		w.String(&textCategories[TextCategoryAuthoredMessage][2])
+	case TextCategoryMessageWithParameters:
+		w.String(&textCategories[TextCategoryMessageWithParameters][0])
+		w.String(&textCategories[TextCategoryMessageWithParameters][1])
+		w.String(&textCategories[TextCategoryMessageWithParameters][2])
 	}
 }
 

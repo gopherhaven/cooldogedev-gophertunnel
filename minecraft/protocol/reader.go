@@ -4,15 +4,16 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/go-gl/mathgl/mgl32"
-	"github.com/google/uuid"
-	"github.com/sandertv/gophertunnel/minecraft/nbt"
 	"image/color"
 	"io"
 	"math"
 	"math/big"
 	"math/bits"
 	"unsafe"
+
+	"github.com/go-gl/mathgl/mgl32"
+	"github.com/google/uuid"
+	"github.com/sandertv/gophertunnel/minecraft/nbt"
 )
 
 // Reader implements reading operations for reading types from Minecraft packets. Each Packet implementation
@@ -628,6 +629,36 @@ func (r *Reader) PackSetting(x *PackSetting) {
 		x.Value = v
 	default:
 		r.UnknownEnumOption(t, "pack setting")
+	}
+}
+
+// ShapeData reads a ShapeData's type from the reader.
+func (r *Reader) ShapeData(x *ShapeData) {
+	var shapeDataType uint32
+	r.Varuint32(&shapeDataType)
+	if !lookupShapeData(shapeDataType, x) {
+		r.UnknownEnumOption(shapeDataType, "debug shape data type")
+		return
+	}
+	(*x).Marshal(r)
+}
+
+// TextCategory reads a text category from the reader.
+func (r *Reader) TextCategory(x *uint8) {
+	category := *x
+	r.Uint8(&category)
+	var length int
+	switch category {
+	case TextCategoryMessageOnly:
+		length = 6
+	case TextCategoryAuthoredMessage:
+		length = 3
+	case TextCategoryMessageWithParameters:
+		length = 3
+	}
+	var tmp string
+	for i := 0; i < length; i++ {
+		r.String(&tmp)
 	}
 }
 
